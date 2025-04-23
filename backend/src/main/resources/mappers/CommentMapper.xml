@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.shareknowledge.api.mapper.CommentMapper">
+    
+    <!-- 댓글 결과 매핑 -->
+    <resultMap id="CommentResultMap" type="com.shareknowledge.api.model.Comment">
+        <id property="id" column="id" />
+        <result property="body" column="body" />
+        <result property="createdAt" column="created_at" />
+        <result property="updatedAt" column="updated_at" />
+        <association property="author" javaType="com.shareknowledge.api.model.User">
+            <id property="id" column="user_id" />
+            <result property="username" column="username" />
+            <result property="profileImageUrl" column="profile_image_url" />
+        </association>
+        <association property="content" javaType="com.shareknowledge.api.model.Content">
+            <id property="id" column="content_id" />
+            <result property="title" column="content_title" />
+        </association>
+        <association property="parent" javaType="com.shareknowledge.api.model.Comment">
+            <id property="id" column="parent_id" />
+        </association>
+    </resultMap>
+    
+    <!-- 공통으로 사용되는 댓글 컬럼 -->
+    <sql id="commentColumns">
+        c.id, c.body, c.created_at, c.updated_at, c.user_id, c.content_id, c.parent_id
+    </sql>
+    
+    <!-- 사용자 기본 정보 컬럼 -->
+    <sql id="userBasicColumns">
+        u.username, u.profile_image_url
+    </sql>
+    
+    <!-- 콘텐츠 기본 정보 컬럼 -->
+    <sql id="contentBasicColumns">
+        cnt.title as content_title
+    </sql>
+    
+    <!-- 댓글 조인 기본 쿼리 -->
+    <sql id="commentJoinBase">
+        FROM comments c
+        LEFT JOIN users u ON c.user_id = u.id
+        LEFT JOIN contents cnt ON c.content_id = cnt.id
+    </sql>
+    
+    <!-- 콘텐츠별 댓글 조회 -->
+    <select id="getCommentsByContentId" parameterType="long" resultMap="CommentResultMap">
+        SELECT <include refid="commentColumns" />, <include refid="userBasicColumns" />, <include refid="contentBasicColumns" />
+        <include refid="commentJoinBase" />
+        WHERE c.content_id = #{contentId}
+        ORDER BY c.created_at ASC
+    </select>
+    
+    <!-- 작성자별 댓글 조회 -->
+    <select id="getCommentsByAuthorId" parameterType="long" resultMap="CommentResultMap">
+        SELECT <include refid="commentColumns" />, <include refid="userBasicColumns" />, <include refid="contentBasicColumns" />
+        <include refid="commentJoinBase" />
+        WHERE c.user_id = #{authorId}
+        ORDER BY c.created_at DESC
+    </select>
+    
+    <!-- 부모 댓글별 댓글 조회(대댓글) -->
+    <select id="getCommentsByParentId" parameterType="long" resultMap="CommentResultMap">
+        SELECT <include refid="commentColumns" />, <include refid="userBasicColumns" />, <include refid="contentBasicColumns" />
+        <include refid="commentJoinBase" />
+        WHERE c.parent_id = #{parentId}
+        ORDER BY c.created_at ASC
+    </select>
+    
+    <!-- ID로 댓글 조회 -->
+    <select id="getCommentById" parameterType="long" resultMap="CommentResultMap">
+        SELECT <include refid="commentColumns" />, <include refid="userBasicColumns" />, <include refid="contentBasicColumns" />
+        <include refid="commentJoinBase" />
+        WHERE c.id = #{id}
+    </select>
+    
+    <!-- 댓글 등록 -->
+    <insert id="insertComment" parameterType="com.shareknowledge.api.model.Comment" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO comments (
+            body, user_id, content_id, parent_id, created_at, updated_at
+        ) VALUES (
+            #{body}, #{author.id}, #{content.id}, #{parent.id}, #{createdAt}, #{updatedAt}
+        )
+    </insert>
+    
+    <!-- 댓글 정보 업데이트 -->
+    <update id="updateComment" parameterType="com.shareknowledge.api.model.Comment">
+        UPDATE comments
+        SET body = #{body},
+            updated_at = #{updatedAt}
+        WHERE id = #{id}
+    </update>
+    
+    <!-- 댓글 삭제 -->
+    <delete id="deleteComment" parameterType="long">
+        DELETE FROM comments
+        WHERE id = #{id}
+    </delete>
+    
+    <!-- 콘텐츠에 속한 모든 댓글 삭제 -->
+    <delete id="deleteCommentsByContentId" parameterType="long">
+        DELETE FROM comments
+        WHERE content_id = #{contentId}
+    </delete>
+    
+</mapper> 

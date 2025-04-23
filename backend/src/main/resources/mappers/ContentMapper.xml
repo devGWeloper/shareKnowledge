@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.shareknowledge.api.mapper.ContentMapper">
+    
+    <!-- 콘텐츠 결과 매핑 -->
+    <resultMap id="ContentResultMap" type="com.shareknowledge.api.model.Content">
+        <id property="id" column="id" />
+        <result property="title" column="title" />
+        <result property="body" column="body" />
+        <result property="thumbnailUrl" column="thumbnail_url" />
+        <result property="viewCount" column="view_count" />
+        <result property="likeCount" column="like_count" />
+        <result property="status" column="status" typeHandler="org.apache.ibatis.type.EnumTypeHandler" />
+        <result property="createdAt" column="created_at" />
+        <result property="updatedAt" column="updated_at" />
+        <result property="publishedAt" column="published_at" />
+        <association property="author" javaType="com.shareknowledge.api.model.User">
+            <id property="id" column="user_id" />
+            <result property="username" column="username" />
+            <result property="profileImageUrl" column="profile_image_url" />
+        </association>
+    </resultMap>
+    
+    <!-- 공통으로 사용되는 콘텐츠 컬럼 -->
+    <sql id="contentColumns">
+        c.id, c.title, c.body, c.thumbnail_url, c.view_count, c.like_count, c.status, 
+        c.created_at, c.updated_at, c.published_at, c.user_id
+    </sql>
+    
+    <!-- 사용자 기본 정보 컬럼 -->
+    <sql id="userBasicColumns">
+        u.id as user_id, u.username, u.profile_image_url
+    </sql>
+    
+    <!-- 콘텐츠 조인 기본 쿼리 -->
+    <sql id="contentJoinBase">
+        FROM contents c
+        LEFT JOIN users u ON c.user_id = u.id
+    </sql>
+    
+    <!-- 전체 콘텐츠 조회 -->
+    <select id="getAllContents" resultMap="ContentResultMap">
+        SELECT <include refid="contentColumns" />, <include refid="userBasicColumns" />
+        <include refid="contentJoinBase" />
+        ORDER BY c.created_at DESC
+    </select>
+    
+    <!-- 상태별 콘텐츠 조회 -->
+    <select id="getContentsByStatus" resultMap="ContentResultMap">
+        SELECT <include refid="contentColumns" />, <include refid="userBasicColumns" />
+        <include refid="contentJoinBase" />
+        WHERE c.status = #{status}
+        ORDER BY c.created_at DESC
+    </select>
+    
+    <!-- 작성자별 콘텐츠 조회 -->
+    <select id="getContentsByAuthorId" parameterType="long" resultMap="ContentResultMap">
+        SELECT <include refid="contentColumns" />, <include refid="userBasicColumns" />
+        <include refid="contentJoinBase" />
+        WHERE c.user_id = #{authorId}
+        ORDER BY c.created_at DESC
+    </select>
+    
+    <!-- 카테고리별 콘텐츠 조회 -->
+    <select id="getContentsByCategoryId" parameterType="long" resultMap="ContentResultMap">
+        SELECT <include refid="contentColumns" />, <include refid="userBasicColumns" />
+        <include refid="contentJoinBase" />
+        JOIN content_categories cc ON c.id = cc.content_id
+        WHERE cc.category_id = #{categoryId}
+        ORDER BY c.created_at DESC
+    </select>
+    
+    <!-- ID로 콘텐츠 조회 -->
+    <select id="getContentById" parameterType="long" resultMap="ContentResultMap">
+        SELECT <include refid="contentColumns" />, <include refid="userBasicColumns" />
+        <include refid="contentJoinBase" />
+        WHERE c.id = #{id}
+    </select>
+    
+    <!-- 콘텐츠 등록 -->
+    <insert id="insertContent" parameterType="com.shareknowledge.api.model.Content" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO contents (
+            title, body, thumbnail_url, status, user_id, view_count, like_count, created_at, updated_at, published_at
+        ) VALUES (
+            #{title}, #{body}, #{thumbnailUrl}, #{status}, #{author.id}, #{viewCount}, #{likeCount}, 
+            #{createdAt}, #{updatedAt}, #{publishedAt}
+        )
+    </insert>
+    
+    <!-- 콘텐츠-카테고리 연결 -->
+    <insert id="insertContentCategory">
+        INSERT INTO content_categories (content_id, category_id)
+        VALUES (#{contentId}, #{categoryId})
+    </insert>
+    
+    <!-- 콘텐츠 정보 업데이트 -->
+    <update id="updateContent" parameterType="com.shareknowledge.api.model.Content">
+        UPDATE contents
+        SET title = #{title},
+            body = #{body},
+            thumbnail_url = #{thumbnailUrl},
+            status = #{status},
+            updated_at = #{updatedAt},
+            published_at = #{publishedAt}
+        WHERE id = #{id}
+    </update>
+    
+    <!-- 콘텐츠 상태 업데이트 -->
+    <update id="updateContentStatus">
+        UPDATE contents
+        SET status = #{status},
+            updated_at = now(),
+            published_at = CASE WHEN #{status} = 'PUBLISHED' AND published_at IS NULL THEN now() ELSE published_at END
+        WHERE id = #{id}
+    </update>
+    
+    <!-- 조회수 증가 -->
+    <update id="incrementViewCount" parameterType="long">
+        UPDATE contents
+        SET view_count = view_count + 1
+        WHERE id = #{id}
+    </update>
+    
+    <!-- 좋아요 수 증가 -->
+    <update id="incrementLikeCount" parameterType="long">
+        UPDATE contents
+        SET like_count = like_count + 1
+        WHERE id = #{id}
+    </update>
+    
+    <!-- 좋아요 수 감소 -->
+    <update id="decrementLikeCount" parameterType="long">
+        UPDATE contents
+        SET like_count = CASE WHEN like_count > 0 THEN like_count - 1 ELSE 0 END
+        WHERE id = #{id}
+    </update>
+    
+    <!-- 콘텐츠 삭제 -->
+    <delete id="deleteContent" parameterType="long">
+        DELETE FROM contents
+        WHERE id = #{id}
+    </delete>
+    
+    <!-- 콘텐츠-카테고리 연결 삭제 -->
+    <delete id="deleteContentCategories" parameterType="long">
+        DELETE FROM content_categories
+        WHERE content_id = #{contentId}
+    </delete>
+    
+</mapper> 

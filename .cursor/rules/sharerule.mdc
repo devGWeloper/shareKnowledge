@@ -1,0 +1,30 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# ShareKnowledge 프로젝트 규칙
+
+## 코드 스타일
+
+### 백엔드 (Java)
+- 클래스 이름은 파스칼 케이스(PascalCase)로 작성합니다.
+- 메서드와 변수 이름은 카멜 케이스(camelCase)로 작성합니다.
+- 상수는 대문자 스네이크 케이스(UPPER_SNAKE_CASE)로 작성합니다.
+- 모든 클래스에는 적절한 JavaDoc 주석을 작성합니다.
+- 모든 백엔드 코드는 '/backend' 디렉토리에 위치해야 합니다
+- 모든 백엔드 코드는 Java로 작성해야 합니다
+- 모든 백엔드 코드는 Spring Boot로 작성해야 합니다
+- 백엔드 코드는 3-Tier Architecture로 작성해야 합니다
+- 쿼리 접근은 mybatis를 사용해야 합니다
+- JPA는 사용하지 않습니다
+- mapper 파일은 반드시 존재해야 합니다
+
+### 프론트엔드 (JavaScript/React)
+- 컴포넌트 이름은 파스칼 케이스(PascalCase)로 작성합니다.
+- 함수와 변수 이름은 카멜 케이스(camelCase)로 작성합니다.
+- React 컴포넌트는 기능별로 폴더를 구분하여 관리합니다.
+- CSS 클래스 이름은 케밥 케이스(kebab-case)로 작성합니다.
+- 컴포넌트는 '/components' 디렉토리에 위치해야 합니다
+- UI 컴포넌트는 '/components/ui' 디렉토리에 위치해야 합니다
+- 페이지별 컴포넌트는 '/app' 디렉토리 내 해당 라우트에 위치해야 합니다

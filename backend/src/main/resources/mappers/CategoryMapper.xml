@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.shareknowledge.api.mapper.CategoryMapper">
+    
+    <!-- 카테고리 결과 매핑 -->
+    <resultMap id="CategoryResultMap" type="com.shareknowledge.api.model.Category">
+        <id property="id" column="id" />
+        <result property="name" column="name" />
+        <result property="description" column="description" />
+        <result property="iconUrl" column="icon_url" />
+    </resultMap>
+    
+    <!-- 공통으로 사용되는 카테고리 컬럼 -->
+    <sql id="categoryColumns">
+        id, name, description, icon_url
+    </sql>
+    
+    <!-- 전체 카테고리 조회 -->
+    <select id="getAllCategories" resultMap="CategoryResultMap">
+        SELECT <include refid="categoryColumns" />
+        FROM categories
+        ORDER BY name
+    </select>
+    
+    <!-- ID로 카테고리 조회 -->
+    <select id="getCategoryById" parameterType="long" resultMap="CategoryResultMap">
+        SELECT <include refid="categoryColumns" />
+        FROM categories
+        WHERE id = #{id}
+    </select>
+    
+    <!-- 이름으로 카테고리 조회 -->
+    <select id="getCategoryByName" parameterType="string" resultMap="CategoryResultMap">
+        SELECT <include refid="categoryColumns" />
+        FROM categories
+        WHERE name = #{name}
+    </select>
+    
+    <!-- 카테고리 등록 -->
+    <insert id="insertCategory" parameterType="com.shareknowledge.api.model.Category" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO categories (
+            name, description, icon_url
+        ) VALUES (
+            #{name}, #{description}, #{iconUrl}
+        )
+    </insert>
+    
+    <!-- 카테고리 정보 업데이트 -->
+    <update id="updateCategory" parameterType="com.shareknowledge.api.model.Category">
+        UPDATE categories
+        SET name = #{name},
+            description = #{description},
+            icon_url = #{iconUrl}
+        WHERE id = #{id}
+    </update>
+    
+    <!-- 카테고리 삭제 -->
+    <delete id="deleteCategory" parameterType="long">
+        DELETE FROM categories
+        WHERE id = #{id}
+    </delete>
+    
+    <!-- 카테고리 이름 존재 여부 확인 -->
+    <select id="existsByName" parameterType="string" resultType="boolean">
+        SELECT COUNT(*) > 0
+        FROM categories
+        WHERE name = #{name}
+    </select>
+    
+</mapper> 
