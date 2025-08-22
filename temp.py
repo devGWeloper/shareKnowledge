@@ -7,12 +7,13 @@ from datetime import datetime
 
 # ===================== 사용자 설정 =====================
 search_dir = Path("C:/workspace/myproject/src")   # 검색할 프로젝트 경로
-keyword = r"['\"]DCOL['\"]"                       # 검색할 키워드 (정규식 가능)
+keyword = r"[‘']DCOL['’]|\"DCOL\""                # 검색할 키워드 (정규식 가능)
 use_regex = True                                  # True: 정규식 검색, False: 일반 문자열 검색
 case_sensitive = False                            # 대소문자 구분 여부
 whole_word = False                                # 단어 단위 검색 여부
 file_extensions = (".java", ".xml", ".properties")# 검색할 확장자
 output_file = "search_results.xlsx"               # 결과 저장 파일명
+file_encoding = "utf-8"                           # 파일 인코딩 (Eclipse 설정에 맞추세요, ex: "ms949")
 # =======================================================
 
 def main():
@@ -57,10 +58,16 @@ def main():
             file_count += 1
 
             try:
-                with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
+                with open(file_path, "r", encoding=file_encoding, errors="ignore") as f:
                     for idx, line in enumerate(f, start=1):
-                        if pattern.search(line):
-                            results.append([str(file_path), idx, line.strip()])
+                        matches = pattern.findall(line)
+                        for match in matches:
+                            results.append([
+                                str(file_path),   # 전체 파일 경로
+                                file,             # 클래스 파일 이름
+                                idx,              # 라인 번호
+                                line.strip()      # 매칭된 내용
+                            ])
                             match_count += 1
             except Exception as e:
                 print(f"⚠️ 파일 무시됨: {file_path} ({e})")
@@ -68,7 +75,7 @@ def main():
 
     # ✅ 결과 저장
     if results:
-        df = pd.DataFrame(results, columns=["File", "Line", "Content"])
+        df = pd.DataFrame(results, columns=["File", "Class", "Line", "Content"])
         df.to_excel(output_file, index=False)
         elapsed = (datetime.now() - start_time).total_seconds()
         print(f"\n✅ 검색 완료: {match_count}건 발견 / {file_count}개 파일 검사")
